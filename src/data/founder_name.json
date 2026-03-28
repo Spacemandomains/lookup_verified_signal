@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "node_active": true,
+    "tier": "Lifetime",
+    "node_id": "wsig_f_00x",
+    "verified_date": "2026-03-28"
+  },
+  "identity": {
+    "name": "Full Name",
+    "photo": "https://link-to-official-photo.jpg"
+  },
+  "founder_persona": {
+    "headline": "Current Professional Title",
+    "current_ventures": [
+      {
+        "name": "Primary Company Name"
+      }
+    ],
+    "full_bio": "This is the high-density, agent-optimized bio that is only released after the $0.85 fee is paid. Include technical expertise, past exits, and specific authority markers here."
+  },
+  "verified_links": {
+    "linkedin": "https://www.linkedin.com/in/username/"
+  }
+}
