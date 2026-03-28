@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activate Your Signal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 py-20">
+    <div class="max-w-2xl mx-auto bg-white p-10 rounded-3xl shadow-xl border">
+        <h1 class="text-3xl font-bold mb-6">Activate Your Node</h1>
+        <form action="https://formspree.io/f/your_id" method="POST" class="space-y-6">
+            <input type="text" name="name" placeholder="Full Name" class="w-full p-4 border rounded-xl" required>
+            <input type="url" name="linkedin" placeholder="LinkedIn URL" class="w-full p-4 border rounded-xl" required>
+            <input type="url" name="photo" placeholder="Photo URL" class="w-full p-4 border rounded-xl" required>
+            <textarea name="bio" placeholder="1-Paragraph Bio" class="w-full p-4 border rounded-xl" rows="4" required></textarea>
+            <button type="submit" class="w-full bg-slate-900 text-white p-4 rounded-xl font-bold">Activate My Verified Signal</button>
+        </form>
+    </div>
+</body>
+</html>
