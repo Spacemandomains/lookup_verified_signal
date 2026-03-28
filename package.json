@@ -1,0 +1,22 @@
+{
+  "name": "wsig-registry-server",
+  "version": "1.0.0",
+  "description": "Verified Signal Network: M2M Identity Registry",
+  "type": "module",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "express": "^4.19.0",
+    "stripe": "^15.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.21"
+  }
+}
