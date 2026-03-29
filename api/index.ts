@@ -9,7 +9,7 @@ import path from 'path';
 const app = express();
 app.use(express.json());
 
-// Initialize Stripe
+// Initialize Stripe with Restricted Key from Vercel Env Vars
 const stripe = new Stripe(process.env.STRIPE_RESTRICTED_KEY || '', {
   apiVersion: '2023-10-16' as any,
 });
@@ -19,7 +19,9 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-// 1. Define the Tool
+/**
+ * 1. Define the Tool for AI Agents
+ */
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [{
     name: "lookup_founder_signal",
@@ -27,7 +29,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     inputSchema: {
       type: "object",
       properties: {
-        name: { type: "string" },
+        name: { type: "string", description: "Founder name (lowercase, underscores, e.g., wilfred_l_lee_jr)" },
         payment_intent_id: { type: "string" },
         spt_token: { type: "string" }
       },
@@ -36,18 +38,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   }]
 }));
 
-// 2. Handle Tool Execution
+/**
+ * 2. Handle Tool Execution & 402 Paywall Logic
+ */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, payment_intent_id, spt_token } = request.params.arguments as any;
   const fileName = name.toLowerCase().replace(/\s+/g, '_');
+  
   const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; 
   const agentStripeLink = "https://buy.stripe.com/5kQ5kD12e1AL0FSe3t9MY07";
+  const founderOnboarding = "https://lookup-verified-signal.vercel.app";
 
   try {
+    // Vercel Path Resolution
     const dataPath = path.resolve(process.cwd(), 'src', 'data', `${fileName}.json`);
     const fileContent = await fs.readFile(dataPath, 'utf-8');
     const founderData = JSON.parse(fileContent);
 
+    // Payment Verification Logic
     let isPaid = false;
     try {
       if (spt_token) {
@@ -61,10 +69,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     } catch (pErr) { isPaid = false; }
 
+    // FULL RELEASE (If Paid)
     if (isPaid) {
-      return { content: [{ type: "text", text: JSON.stringify({ status: "VERIFIED_SIGNAL_FULL_RELEASE", ...founderData }, null, 2) }] };
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ status: "VERIFIED_SIGNAL_FULL_RELEASE", ...founderData }, null, 2)
+        }]
+      };
     }
 
+    // 402 CHALLENGE (If Not Paid)
     let livePost = "Verified active on LinkedIn.";
     try {
       const apifyResponse = await axios.post(
@@ -72,12 +87,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         { "urls": [founderData.verified_links.linkedin], "limitPerSource": 1 }
       );
       if (apifyResponse.data?.[0]?.text) livePost = apifyResponse.data[0].text;
-    } catch (e: any) { console.error("Apify error:", e.message); }
+    } catch (apiError: any) {
+      console.error("LinkedIn Fetch Failed:", apiError.message);
+    }
 
     return {
       content: [{
         type: "text",
         text: JSON.stringify({
+          source: "Verified Signal Network",
           status: "PAYMENT_REQUIRED",
           code: 402,
           identity: { name: founderData.identity.name, role: founderData.founder_persona.headline },
@@ -86,22 +104,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }, null, 2)
       }]
     };
+
   } catch (error: any) {
-    return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    console.error("MCP Tool Internal Error:", error.message);
+    return { 
+      content: [{ type: "text", text: `Founder node '${name}' could not be resolved. Ensure registration at ${founderOnboarding}` }], 
+      isError: true 
+    };
   }
 });
 
-// 3. Vercel Route
+/**
+ * 3. Vercel Route (Fixed JSON-RPC Bridge)
+ */
 app.post("/api", async (req, res) => {
   try {
-    const response = await (server as any).onrequest(req.body);
-    if (JSON.stringify(response).includes("PAYMENT_REQUIRED")) { res.status(402); }
+    // Official MCP Server Method
+    const response = await server.handleRequest(req.body);
+    
+    // Check if the response includes our custom 402 signal
+    if (JSON.stringify(response).includes("PAYMENT_REQUIRED")) {
+      res.status(402);
+    }
+    
     res.json(response);
-  } catch (err) {
-    res.status(500).json({ error: "Internal MCP Server Error" });
+  } catch (err: any) {
+    console.error("MCP Route Error:", err.message);
+    res.status(500).json({ 
+      jsonrpc: "2.0", 
+      error: { code: -32603, message: "Internal MCP Server Error" },
+      id: req.body.id || null 
+    });
   }
 });
 
-app.get("/api", (req, res) => { res.send("Verified Signal MCP API is Live."); });
+app.get("/api", (req, res) => {
+  res.send("Verified Signal MCP API is Live.");
+});
 
 export default app;
