@@ -37,7 +37,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, payment_intent_id, spt_token } = request.params.arguments as any;
   const fileName = name.toLowerCase().replace(/\s+/g, '_');
-  const AGENT_PRICE_ID = "price_1Qxxxxxxxxxxxxxxxx"; 
+  const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; 
 
   try {
     const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
