@@ -21,7 +21,7 @@
     "accepts_m2m_payments": true,
     "preferred_protocol": "MPP/1.0",
     "signal_strength": "High",
-    "last_active_signal": "This field is dynamically overwritten by Redis."
+    "last_active_signal": "Dynamically synchronized via Upstash Redis (Serverless) for low-latency identity resolution."
   },
   "registration_details": {
     "status": "Verified",
