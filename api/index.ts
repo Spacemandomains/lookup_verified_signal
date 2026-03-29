@@ -2,10 +2,13 @@ import express from "express";
 import fs from "fs/promises";
 import path from "path";
 import Stripe from 'stripe';
-import { kv } from '@vercel/kv'; 
+import { Redis } from '@upstash/redis'; 
 
 const app = express();
 app.use(express.json());
+
+// Initialize Redis from Environment Variables (KV_URL and KV_REST_API_TOKEN)
+const redis = Redis.fromEnv();
 
 const stripe = new Stripe(process.env.STRIPE_RESTRICTED_KEY || '', {
   apiVersion: '2023-10-16' as any,
@@ -27,8 +30,8 @@ app.get("/api", async (req, res) => {
       const fileContent = await fs.readFile(dataPath, 'utf-8');
       const founderData = JSON.parse(fileContent);
 
-      // 2. Fetch the "Live Pulse" from your RedisLabs/Upstash instance
-      let liveSignal = await kv.get(`signal:${slug}`);
+      // 2. Fetch the "Live Pulse" from Upstash Redis
+      let liveSignal = await redis.get(`signal:${slug}`);
       if (!liveSignal) {
         liveSignal = "Signal syncing with LinkedIn... Node status: Verified.";
       }
@@ -73,8 +76,8 @@ app.post("/api", async (req: any, res: any) => {
       const fileContent = await fs.readFile(dataPath, 'utf-8');
       const founderData = JSON.parse(fileContent);
 
-      // Grab the live Redis pulse for the agent
-      let liveSignal = await kv.get(`signal:${slug}`);
+      // Grab the live Redis pulse
+      let liveSignal = await redis.get(`signal:${slug}`);
       if (!liveSignal) liveSignal = "Signal active.";
 
       // Payment Check Logic
@@ -100,7 +103,7 @@ app.post("/api", async (req: any, res: any) => {
         });
       }
 
-      // Standard Paywall Response for Agents
+      // Standard Paywall Response
       return res.status(200).json({
         jsonrpc: "2.0", id,
         result: {
