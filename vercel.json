@@ -1,15 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "api/*.ts": {
-      "runtime": "vercel-node@latest"
-    }
-  },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/.well-known/(.*)", "destination": "/.well-known/$1" },
     { "source": "/openapi.json", "destination": "/api/index.ts" },
-    { "source": "/api", "destination": "/api/index.ts" },
-    { "source": "/success", "destination": "/success.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/success", "destination": "/success.html" }
   ]
 }
