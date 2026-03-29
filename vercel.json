@@ -2,6 +2,7 @@
   "version": 2,
   "public": true,
   "rewrites": [
+    { "source": "/openapi.json", "destination": "/openapi.json" },
     { "source": "/api", "destination": "/api/index.ts" },
     { "source": "/success", "destination": "/success.html" },
     { "source": "/(.*)", "destination": "/index.html" }
