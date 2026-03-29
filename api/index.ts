@@ -12,7 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_RESTRICTED_KEY || '', {
 
 /**
  * VSN-001 CONFIGURATION
- * Centralized constants for easy scaling to VSN-011.
+ * Centralized constants for the Verified Signal Network.
  */
 const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ";
 const AGENT_PAYMENT_LINK = "https://buy.stripe.com/5kQ5kD12e1AL0FSe3t9MY07";
@@ -33,16 +33,15 @@ async function getRedis() {
 
 /**
  * GET /api?name=slug
- * Used by Humans and Search Engines to preview the Identity Node.
+ * Primary endpoint for Humans, Browsers, and Search Engines.
  */
 app.get("/api", async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(200).send("Verified Signal Network: Genesis Node VSN-001 Online.");
 
-  const slug = (name as string).toLowerCase().replace(/\s+/g, '_');
+  const slug = (name as string).toLowerCase().trim().replace(/\s+/g, '_');
   
   try {
-    // Deploy Trigger: VSN-001-Final
     // 1. Fetch Static Bio from GitHub
     const githubResponse = await axios.get(`${GITHUB_RAW_BASE}/${slug}.json`);
     const founderData = githubResponse.data;
@@ -70,54 +69,72 @@ app.get("/api", async (req, res) => {
         link: AGENT_PAYMENT_LINK
       }
     });
-  } catch (error) {
-    console.error(`Error fetching node [${slug}]:`, error.message);
+  } catch (error: any) {
+    console.error(`GET Fetch Failed for [${slug}]:`, error.message);
     return res.status(404).json({ error: "Node not found on the Verified Signal Network." });
   }
 });
 
 /**
  * POST /api
- * The M2M (Machine-to-Machine) Gateway for AI Agents.
+ * The M2M (Machine-to-Machine) Gateway for AI Agents using JSON-RPC.
  */
 app.post("/api", async (req: any, res: any) => {
   const { method, params, id } = req.body;
-  if (method !== "tools/call") return res.status(400).send("Invalid RPC Method");
-
-  // IMPROVED: Extract name from multiple possible levels (standard for different AI agents)
-  const name = params?.arguments?.name || params?.name || "";
-  const payment_intent_id = params?.arguments?.payment_intent_id || params?.payment_intent_id;
   
-  const slug = name.toLowerCase().replace(/\s+/g, '_');
+  // 1. Validate Method
+  if (method !== "tools/call") {
+    return res.status(400).json({ error: "Invalid RPC Method. Use 'tools/call'." });
+  }
 
-  if (!slug) {
-    return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: "Error: No 'name' provided in arguments." }] } });
+  // 2. HYPER-RESILIENT EXTRACTION
+  // Checks 'params.arguments', 'params' root, and top-level 'body'
+  const rawName = params?.arguments?.name || params?.name || req.body?.name || "";
+  const payment_intent_id = params?.arguments?.payment_intent_id || params?.payment_intent_id || req.body?.payment_intent_id;
+  
+  const slug = rawName.toLowerCase().trim().replace(/\s+/g, '_');
+
+  // 3. Fail Fast if Name is Missing
+  if (!slug || slug === "") {
+    return res.json({ 
+      jsonrpc: "2.0", 
+      id, 
+      result: { content: [{ type: "text", text: "Error: No 'name' argument detected. Please provide a founder name." }] } 
+    });
   }
 
   try {
-    const githubResponse = await axios.get(`${GITHUB_RAW_BASE}/${slug}.json`);
+    // 4. Fetch Static Data from GitHub
+    const githubUrl = `${GITHUB_RAW_BASE}/${slug}.json`;
+    const githubResponse = await axios.get(githubUrl);
     const founderData = githubResponse.data;
 
+    // 5. Fetch Live Signal from Redis
     const redis = await getRedis();
-    let liveSignal = await redis.get(`signal:${slug}`);
+    const liveSignal = await redis.get(`signal:${slug}`);
 
+    // 6. Paywall Verification Logic
     let isPaid = false;
     if (payment_intent_id) {
       try {
+        // We retrieve the session from Stripe to verify payment_status
         const session = await stripe.checkout.sessions.retrieve(payment_intent_id);
         if (session.payment_status === 'paid') isPaid = true;
-      } catch (e) {
-        console.error("Stripe verify failed, continuing as unpaid.");
+      } catch (e: any) {
+        console.error(`Stripe verification failed for ${payment_intent_id}:`, e.message);
       }
     }
 
+    // 7. Secure Payload Construction (The Gate)
+    // If NOT paid, we ONLY return the identity name and payment metadata.
     const payload = isPaid 
       ? { status: "FULL_ACCESS_GRANTED", ...founderData } 
       : { 
           status: "PAYMENT_REQUIRED", 
           identity: { name: founderData.identity.name },
           verification_fee: MICRO_VERIFICATION_USD,
-          price_id: AGENT_PRICE_ID 
+          price_id: AGENT_PRICE_ID,
+          payment_link: AGENT_PAYMENT_LINK
         };
     
     return res.json({
@@ -126,17 +143,18 @@ app.post("/api", async (req: any, res: any) => {
       result: { 
         content: [{ 
           type: "text", 
-          text: JSON.stringify({ ...payload, live_signal: liveSignal || "Active" }, null, 2) 
+          text: JSON.stringify({ ...payload, last_active_signal: liveSignal || "Active" }, null, 2) 
         }] 
       }
     });
-  } catch (e) {
-    // DIAGNOSTIC: Log the actual URL we tried to hit to the Vercel logs
-    console.error(`POST Fetch Failed for: ${GITHUB_RAW_BASE}/${slug}.json`);
+
+  } catch (error: any) {
+    // 8. Log the EXACT URL that failed to Vercel Logs for debugging
+    console.error(`POST Fetch Failed for: ${GITHUB_RAW_BASE}/${slug}.json - Error: ${error.message}`);
     return res.json({ 
       jsonrpc: "2.0", 
       id, 
-      result: { content: [{ type: "text", text: "Oracle Node Offline or Not Found." }] } 
+      result: { content: [{ type: "text", text: `Oracle Node '${slug}' not found. Verify the GitHub path.` }] } 
     });
   }
 });
