@@ -1,3 +1,16 @@
+# 🛡️ Verified Signal Network - Agentic Robots Protocol
 User-agent: *
 Allow: /
+Allow: /api
+Allow: /openapi.json
+Allow: /AGENT.md
+Allow: /src/data/
+
+# Machine-Readable Maps
 Sitemap: https://lookup-verified-signal.vercel.app/openapi.json
+Sitemap: https://lookup-verified-signal.vercel.app/AGENT.md
+
+# Emerging AI Standards (2026)
+# These custom headers signal to autonomous LLMs where to find their instructions.
+X-Agent-Instructions: https://lookup-verified-signal.vercel.app/AGENT.md
+X-API-Spec: https://lookup-verified-signal.vercel.app/openapi.json
