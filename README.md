@@ -37,3 +37,12 @@ Resolves a founder's identity and returns either a **Verified Preview** or a **F
   "spt_token": "string (optional: Shared Payment Token for autonomous spend)",
   "payment_intent_id": "string (optional: Stripe Payment Intent ID)"
 }
+
+🤖 Machine-to-Machine (M2M) Instructions
+This API supports the Stripe Agentic Suite.
+
+Query: Call lookup_founder_signal with the founder's name.
+
+Challenge: If status is VERIFIED_PREVIEW, the agent must provide an spt_token to unlock the VERIFIED_SIGNAL_FULL_RELEASE.
+
+Authorization: All charges are capped at $0.85 USD per request.
