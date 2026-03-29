@@ -1,6 +1,5 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/server/in-memory.js"; // New Import
 import express from "express";
 import Stripe from 'stripe';
 import axios from 'axios';
@@ -38,20 +37,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, payment_intent_id, spt_token } = request.params.arguments as any;
   const fileName = name.toLowerCase().replace(/\s+/g, '_');
-  const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; 
+  const AGENT_PRICE_ID = "price_1Qxxxxxxxxxxxxxxxx"; 
 
   try {
     const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
     const founderData = JSON.parse(await fs.readFile(dataPath, 'utf-8'));
 
-    // Check for Payment
-    let isPaid = (spt_token || payment_intent_id); 
+    let isPaid = !!(spt_token || payment_intent_id); 
 
     if (isPaid) {
       return { content: [{ type: "text", text: JSON.stringify(founderData, null, 2) }] };
     }
 
-    // Free Snippet Logic
     const linkedinUrl = founderData.verified_links.linkedin;
     const apifyResponse = await axios.post(`https://api.apify.com/v2/acts/curious_coder~linkedin-post-scraper/run-sync-get-dataset-items?token=${process.env.APIFY_TOKEN}`, { "urls": [linkedinUrl], "limitPerSource": 1 });
     const livePost = apifyResponse.data?.[0]?.text || "Recently active on LinkedIn.";
@@ -73,20 +70,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// --- VERCEL ADAPTER (FIXED) ---
+// --- VERCEL ADAPTER (THE FIX) ---
 app.post("/api", async (req, res) => {
-  const transport = new InMemoryTransport();
-  await server.connect(transport);
-
-  // Send the request into the transport
-  transport.onmessage = (message) => {
-    res.json(message);
-  };
-
   try {
-    await transport.send(req.body);
+    // We use the internal 'onnotification' and 'onrequest' hooks 
+    // to process the body without calling a missing 'handleRequest' method.
+    const result = await (server as any).onrequest(req.body);
+    res.json(result);
   } catch (err) {
-    res.status(500).json({ error: "MCP Transport Error" });
+    console.error("MCP Error:", err);
+    res.status(500).json({ error: "Internal MCP Server Error" });
   }
 });
 
