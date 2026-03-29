@@ -16,7 +16,6 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-// --- TOOL DEFINITION ---
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [{
     name: "lookup_founder_signal",
@@ -33,28 +32,25 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   }]
 }));
 
-// --- TOOL HANDLER ---
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, payment_intent_id, spt_token } = request.params.arguments as any;
   const fileName = name.toLowerCase().replace(/\s+/g, '_');
-  const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; 
+  const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; // UPDATE THIS
 
   try {
-    // Note: On Vercel, paths are relative to the project root
+    // Vercel-specific path resolution
     const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
     const founderData = JSON.parse(await fs.readFile(dataPath, 'utf-8'));
 
+    if (founderData.meta.node_active !== true) throw new Error("Node Inactive");
+
     let isPaid = false;
-    if (spt_token || payment_intent_id) {
-       // Stripe verification logic...
-       isPaid = true; 
-    }
+    if (spt_token || payment_intent_id) { isPaid = true; } // Simplified for test
 
     if (isPaid) {
       return { content: [{ type: "text", text: JSON.stringify(founderData, null, 2) }] };
     }
 
-    // Live LinkedIn Snippet Logic
     const linkedinUrl = founderData.verified_links.linkedin;
     const apifyResponse = await axios.post(`https://api.apify.com/v2/acts/curious_coder~linkedin-post-scraper/run-sync-get-dataset-items?token=${process.env.APIFY_TOKEN}`, { "urls": [linkedinUrl], "limitPerSource": 1 });
     const livePost = apifyResponse.data?.[0]?.text || "Recently active on LinkedIn.";
@@ -76,12 +72,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// --- VERCEL API ADAPTER ---
-// This allows Vercel to handle the MCP request via standard POST
+// The Vercel Route
 app.post("/api", async (req, res) => {
-  // Manual transport handling for Serverless
   const response = await server.handleRequest(req.body);
   res.json(response);
+});
+
+// Handle the root /api for sanity checks
+app.get("/api", (req, res) => {
+  res.send("Verified Signal MCP API is Live.");
 });
 
 export default app;
