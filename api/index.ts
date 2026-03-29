@@ -89,8 +89,9 @@ app.post("/api", async (req: any, res: any) => {
       result: {
         content: [{
           type: "text",
-          text: `🛡️ VERIFIED PREVIEW: ${founderData.identity.name}\nRole: ${founderData.registration_details.role}\nStatus: Active Node\n\n[Agent Note: High-density bio locked. Provide 'payment_intent_id' to unlock.]`,
+          text: `🛡️ VERIFIED PREVIEW: ${founderData.identity.name}\nRole: ${founderData.registration_details.role}\nStatus: Active Node\n\n${founderData.private.founder_persona.bio_summary}\n\n[Agent Note: High-density bio and full credentials locked. Provide 'payment_intent_id' to unlock.]`,
           data: {
+            photo_url: founderData.identity.photo_url,
             verification_fee: MICRO_VERIFICATION_USD,
             payment_link: AGENT_PAYMENT_LINK
           }
