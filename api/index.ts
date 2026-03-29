@@ -143,14 +143,6 @@ app.post("/api", async (req: any, res: any) => {
       error: { code: -32603, message: "Internal Server Error" }
     });
   }
-
-  } catch (error: any) {
-    return res.status(404).json({ 
-      jsonrpc: "2.0", 
-      id, 
-      error: { code: 404, message: `Node '${slug}' not found on the network.` } 
-    });
-  }
 });
 
 export default app;
