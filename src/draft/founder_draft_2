@@ -1,32 +1,31 @@
 {
   "identity": {
-    "name": "Jane Doe",
-    "slug": "jane_doe",
-    "photo_url": "https://raw.githubusercontent.com/Spacemandomains/Wilfred_L_Lee_Jr_Bio/main/jane_doe.JPG",
-    "display_signal": "![Jane Doe](https://raw.githubusercontent.com/Spacemandomains/Wilfred_L_Lee_Jr_Bio/main/jane_doe.JPG)",
-    "verified_on": "2026-03-28T17:30:00Z"
+    "name": "Founder Name",
+    "slug": "founder_slug",
+    "photo_url": "https://raw.githubusercontent.com/RepoName/Path/To/Photo.JPG",
+    "verified_on": "2026-03-28T00:00:00Z"
   },
   "founder_persona": {
-    "headline": "CEO & Founder of TechFlow AI | Ex-Google Senior Dev",
-    "bio_summary": "Pioneering agentic workflows for enterprise logistics. Specializes in M2M economy and automated supply chain optimization.",
-    "current_focus": "Building the 'Vibe Coding' infrastructure for Southeast Asia markets.",
-    "areas_of_expertise": ["AI Agents", "Logistics", "TypeScript", "Venture Capital"]
+    "headline": "Current Title | Past Experience | Key Achievement",
+    "bio_summary": "A high-level overview of the founder's impact and current ventures. Optimized for AI agent summaries.",
+    "current_focus": "The primary project or goal the founder is currently executing.",
+    "areas_of_expertise": ["Topic 1", "Topic 2", "Topic 3"]
   },
   "verified_links": {
-    "linkedin": "https://www.linkedin.com/in/janedoe",
-    "twitter_x": "https://x.com/janedoe",
-    "github": "https://github.com/janedoe",
-    "website": "https://techflow.ai"
+    "linkedin": "https://www.linkedin.com/in/username",
+    "twitter_x": "https://x.com/username",
+    "github": "https://github.com/username",
+    "website": "https://company.ai"
   },
   "agentic_metadata": {
     "accepts_m2m_payments": true,
     "preferred_protocol": "MPP/1.0",
     "signal_strength": "High",
-    "last_active_signal": "Active on LinkedIn - Discussing Series A funding."
+    "last_active_signal": "This field is dynamically overwritten by Redis."
   },
   "registration_details": {
     "status": "Verified",
     "tier": "Founder-Standard",
-    "network_id": "VSN-002"
+    "network_id": "VSN-XXX"
   }
 }
