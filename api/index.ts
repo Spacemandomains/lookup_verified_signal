@@ -84,8 +84,15 @@ app.post("/api", async (req: any, res: any) => {
   const { method, params, id } = req.body;
   if (method !== "tools/call") return res.status(400).send("Invalid RPC Method");
 
-  const { name, payment_intent_id } = params?.arguments || {};
-  const slug = (name || "").toLowerCase().replace(/\s+/g, '_');
+  // IMPROVED: Extract name from multiple possible levels (standard for different AI agents)
+  const name = params?.arguments?.name || params?.name || "";
+  const payment_intent_id = params?.arguments?.payment_intent_id || params?.payment_intent_id;
+  
+  const slug = name.toLowerCase().replace(/\s+/g, '_');
+
+  if (!slug) {
+    return res.json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: "Error: No 'name' provided in arguments." }] } });
+  }
 
   try {
     const githubResponse = await axios.get(`${GITHUB_RAW_BASE}/${slug}.json`);
@@ -94,11 +101,14 @@ app.post("/api", async (req: any, res: any) => {
     const redis = await getRedis();
     let liveSignal = await redis.get(`signal:${slug}`);
 
-    // Stripe Verification Logic
     let isPaid = false;
     if (payment_intent_id) {
-      const session = await stripe.checkout.sessions.retrieve(payment_intent_id);
-      if (session.payment_status === 'paid') isPaid = true;
+      try {
+        const session = await stripe.checkout.sessions.retrieve(payment_intent_id);
+        if (session.payment_status === 'paid') isPaid = true;
+      } catch (e) {
+        console.error("Stripe verify failed, continuing as unpaid.");
+      }
     }
 
     const payload = isPaid 
@@ -121,6 +131,8 @@ app.post("/api", async (req: any, res: any) => {
       }
     });
   } catch (e) {
+    // DIAGNOSTIC: Log the actual URL we tried to hit to the Vercel logs
+    console.error(`POST Fetch Failed for: ${GITHUB_RAW_BASE}/${slug}.json`);
     return res.json({ 
       jsonrpc: "2.0", 
       id, 
