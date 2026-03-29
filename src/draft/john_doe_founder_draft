@@ -1,0 +1,38 @@
+[
+  {
+    "slug": "john_doe",
+    "identity": {
+      "name": "John Doe",
+      "photo_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
+      "verified_on": "2026-03-29T10:00:00Z"
+    },
+    "registration_details": {
+      "status": "Verified",
+      "role": "Chief Visionary, AeroSpace Dynamics",
+      "tier": "Beta-Node",
+      "network_id": "VSN-777"
+    },
+    "private": {
+      "founder_persona": {
+        "headline": "Pioneer in Orbital Logistics | Ex-SpaceX Lead | Satellite Network Architect",
+        "bio_summary": "Architecting low-Earth orbit supply chains and autonomous refueling stations for the next generation of space travel.",
+        "current_focus": "Building a decentralized orbital relay network for high-speed M2M space communication.",
+        "areas_of_expertise": [
+          "Orbital Mechanics",
+          "Propulsion Systems",
+          "Space-to-Ground Networking"
+        ]
+      },
+      "verified_links": {
+        "linkedin": "https://www.linkedin.com/in/dummy-john-doe",
+        "twitter_x": "https://x.com/j_doe_space_dummy",
+        "website": "https://dummy-aerospace-dynamics.com"
+      },
+      "agentic_metadata": {
+        "accepts_m2m_payments": true,
+        "signal_strength": "Maximum",
+        "last_active_signal": "Telemetry synchronized via deep-space relay."
+      }
+    }
+  }
+]
