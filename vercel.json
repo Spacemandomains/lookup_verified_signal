@@ -1,14 +1,5 @@
-{
-  "version": 2,
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "src/data/**"
-    }
-  },
-  "rewrites": [
-    { "source": "/openapi.json", "destination": "/openapi.json" },
-    { "source": "/api", "destination": "/api/index.ts" },
-    { "source": "/success", "destination": "/success.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+"rewrites": [
+  { "source": "/api", "destination": "/api/index.ts" },
+  { "source": "/success", "destination": "/success.html" },
+  { "source": "/(.*)", "destination": "/index.html" }
+]
