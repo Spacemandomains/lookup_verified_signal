@@ -11,10 +11,10 @@ const stripe = new Stripe(process.env.STRIPE_RESTRICTED_KEY || '', {
   apiVersion: '2023-10-16' as any,
 });
 
+// --- POST: Handles AI Agent requests (JSON-RPC) ---
 app.post("/api", async (req: any, res: any) => {
   const { method, params, id } = req.body;
 
-  // 1. DISCOVERY: Tell AI Agents what tools are available
   if (method === "tools/list") {
     return res.json({
       jsonrpc: "2.0", id,
@@ -35,7 +35,6 @@ app.post("/api", async (req: any, res: any) => {
     });
   }
 
-  // 2. EXECUTION: The Paywall and Verification Logic
   if (method === "tools/call") {
     const { name, payment_intent_id } = params?.arguments || {};
     const fileName = (name || "").toLowerCase().replace(/\s+/g, '_');
@@ -45,26 +44,20 @@ app.post("/api", async (req: any, res: any) => {
     const registrationUrl = "https://lookup-verified-signal.vercel.app/";
 
     try {
-      // Find the Founder Node file
       const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
       const fileContent = await fs.readFile(dataPath, 'utf-8');
       const founderData = JSON.parse(fileContent);
 
-      // --- VERIFICATION LOGIC ---
       let isPaid = false;
       if (payment_intent_id) {
         try {
-          // Stripe uses 'checkout.sessions' to retrieve the status of a Payment Link purchase
           const session = await stripe.checkout.sessions.retrieve(payment_intent_id);
-          if (session.payment_status === 'paid') {
-            isPaid = true;
-          }
+          if (session.payment_status === 'paid') isPaid = true;
         } catch (stripeErr) {
           console.error("Stripe Verification Failed:", stripeErr);
         }
       }
 
-      // CASE A: DATA RELEASE (Payment Verified)
       if (isPaid) {
         return res.json({
           jsonrpc: "2.0", id,
@@ -81,7 +74,6 @@ app.post("/api", async (req: any, res: any) => {
         });
       }
 
-      // CASE B: 402 PAYWALL (Needs Payment)
       return res.status(402).json({
         jsonrpc: "2.0", id,
         result: {
@@ -108,7 +100,6 @@ app.post("/api", async (req: any, res: any) => {
       });
 
     } catch (error) {
-      // CASE C: EMPTY SHELF (Founder not found)
       return res.json({
         jsonrpc: "2.0", id,
         result: {
@@ -124,6 +115,39 @@ app.post("/api", async (req: any, res: any) => {
   return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found" } });
 });
 
-app.get("/api", (req, res) => res.send("Verified Signal MCP API is Live (Production Mode)."));
+// --- GET: Handles Human Browser clicks (B14 Link) ---
+app.get("/api", async (req, res) => {
+  const { name } = req.query;
+
+  if (name) {
+    const fileName = (name as string).toLowerCase().replace(/\s+/g, '_');
+    try {
+      const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
+      const fileContent = await fs.readFile(dataPath, 'utf-8');
+      const founderData = JSON.parse(fileContent);
+
+      // Return the paywall JSON directly to the browser
+      return res.status(402).json({
+        status: "PAYMENT_REQUIRED",
+        code: 402,
+        identity: { 
+          name: founderData.identity.name, 
+          role: founderData.founder_persona.headline 
+        },
+        agent_payment_action: {
+          protocol: "MPP/1.0",
+          amount: 85,
+          currency: "usd",
+          price_id: "price_1TG5InIjlqeMQmrhk6Ki3oWQ",
+          human_link: "https://buy.stripe.com/5kQ5kD12e1AL0FSe3t9MY07"
+        }
+      });
+    } catch (error) {
+      return res.status(404).send(`Founder node '${name}' not found in the Verified Signal Network.`);
+    }
+  }
+
+  res.send("Verified Signal Network API is Online. Use ?name=[slug] to view a listing.");
+});
 
 export default app;
