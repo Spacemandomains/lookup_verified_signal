@@ -1,32 +1,73 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
-    "title": "Verified Signal Registry",
-    "version": "1.0.0",
-    "description": "M2M Identity Registry with $0.85 Agentic Access fee."
+    "title": "Verified Signal Network API",
+    "description": "API for retrieving high-fidelity, verified professional signals for founders. Initial lookup provides a free identity preview; full data requires a $0.85 verification fee.",
+    "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "https://lookup-verified-signal.vercel.app",
+      "description": "Production server"
+    }
+  ],
   "paths": {
     "/api": {
       "post": {
-        "summary": "Lookup Verified Founder Signal",
-        "operationId": "lookup_founder_signal",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": { "type": "string" },
-                  "spt_token": { "type": "string", "description": "Shared Payment Token for $0.85 fee" }
-                }
+        "operationId": "lookupFounderSignal",
+        "summary": "Retrieve a founder's verified professional signal",
+        "description": "Queries the registry for a founder by name. If the signal is locked, a 402 status is returned with a payment link.",
+        "responses": {
+          "200": {
+            "description": "Full high-fidelity signal successfully released.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FullSignal" }
               }
             }
+          },
+          "402": {
+            "description": "Payment Required. Provide the human_link to the user to unlock the full signal.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaywallResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Founder not found in the registry."
           }
-        },
-        "responses": {
-          "200": { "description": "Verified Founder Data" },
-          "402": { "description": "Payment Required for Full Release" }
         }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaywallResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "PAYMENT_REQUIRED" },
+          "identity": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "role": { "type": "string" },
+              "photo_url": { "type": "string", "format": "uri" },
+              "preview": { "type": "string" }
+            }
+          },
+          "agent_payment_action": {
+            "type": "object",
+            "properties": {
+              "human_link": { "type": "string", "format": "uri" },
+              "amount": { "type": "integer", "description": "Amount in cents (e.g., 85 for $0.85)" }
+            }
+          }
+        }
+      },
+      "FullSignal": {
+        "type": "object",
+        "description": "The complete verified dataset for the founder."
       }
     }
   }
