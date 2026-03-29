@@ -1,6 +1,8 @@
 {
   "name": "lookup-verified-signal",
   "version": "1.0.0",
+  "type": "module", 
+  "description": "M2M Identity Oracle for the Verified Signal Network (VSN)",
   "main": "api/index.ts",
   "dependencies": {
     "axios": "^1.6.0",
@@ -8,10 +10,5 @@
     "redis": "^4.6.10",
     "stripe": "^15.0.0"
   },
-  "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/node": "^20.11.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
-  }
+  ...
 }
