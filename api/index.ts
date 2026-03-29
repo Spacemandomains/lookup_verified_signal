@@ -42,6 +42,7 @@ app.get("/api", async (req, res) => {
   const slug = (name as string).toLowerCase().replace(/\s+/g, '_');
   
   try {
+    // Deploy Trigger: VSN-001-Final
     // 1. Fetch Static Bio from GitHub
     const githubResponse = await axios.get(`${GITHUB_RAW_BASE}/${slug}.json`);
     const founderData = githubResponse.data;
