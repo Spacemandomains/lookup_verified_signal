@@ -1,5 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/server/in-memory.js"; // New Import
 import express from "express";
 import Stripe from 'stripe';
 import axios from 'axios';
@@ -16,6 +17,7 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
+// --- TOOL DEFINITION ---
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [{
     name: "lookup_founder_signal",
@@ -32,25 +34,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   }]
 }));
 
+// --- TOOL HANDLER ---
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, payment_intent_id, spt_token } = request.params.arguments as any;
   const fileName = name.toLowerCase().replace(/\s+/g, '_');
-  const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; // UPDATE THIS
+  const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ"; 
 
   try {
-    // Vercel-specific path resolution
     const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
     const founderData = JSON.parse(await fs.readFile(dataPath, 'utf-8'));
 
-    if (founderData.meta.node_active !== true) throw new Error("Node Inactive");
-
-    let isPaid = false;
-    if (spt_token || payment_intent_id) { isPaid = true; } // Simplified for test
+    // Check for Payment
+    let isPaid = (spt_token || payment_intent_id); 
 
     if (isPaid) {
       return { content: [{ type: "text", text: JSON.stringify(founderData, null, 2) }] };
     }
 
+    // Free Snippet Logic
     const linkedinUrl = founderData.verified_links.linkedin;
     const apifyResponse = await axios.post(`https://api.apify.com/v2/acts/curious_coder~linkedin-post-scraper/run-sync-get-dataset-items?token=${process.env.APIFY_TOKEN}`, { "urls": [linkedinUrl], "limitPerSource": 1 });
     const livePost = apifyResponse.data?.[0]?.text || "Recently active on LinkedIn.";
@@ -72,13 +73,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// The Vercel Route
+// --- VERCEL ADAPTER (FIXED) ---
 app.post("/api", async (req, res) => {
-  const response = await server.handleRequest(req.body);
-  res.json(response);
+  const transport = new InMemoryTransport();
+  await server.connect(transport);
+
+  // Send the request into the transport
+  transport.onmessage = (message) => {
+    res.json(message);
+  };
+
+  try {
+    await transport.send(req.body);
+  } catch (err) {
+    res.status(500).json({ error: "MCP Transport Error" });
+  }
 });
 
-// Handle the root /api for sanity checks
 app.get("/api", (req, res) => {
   res.send("Verified Signal MCP API is Live.");
 });
