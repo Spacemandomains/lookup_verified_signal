@@ -61,8 +61,23 @@ app.post("/api", async (req: any, res: any) => {
   const payment_intent_id = params?.arguments?.payment_intent_id || params?.payment_intent_id || req.body?.payment_intent_id;
   const slug = rawName.toLowerCase().trim().replace(/\s+/g, '_');
 
+// --- 0. DATA LOOKUP ---
+  // Ensure 'founders' is imported from your JSON file at the top of index.ts
+  const founder = founders.find((f: any) => f.slug === slug);
+
+  if (!founder) {
+    return res.status(404).json({
+      jsonrpc: "2.0",
+      id,
+      error: { 
+        code: 404, 
+        message: "Founder not found in Verified Signal Network." 
+      }
+    });
+  }
+
   // --- 1. SOFT GATEKEEPER (FREE PREVIEW) ---
-  // If no payment_intent_id is provided, return the Free Tier Preview instead of a 402.
+  // If no payment_intent_id is provided, we return the successful Preview.
   if (!payment_intent_id) {
     return res.status(200).json({
       jsonrpc: "2.0",
@@ -70,7 +85,8 @@ app.post("/api", async (req: any, res: any) => {
       result: {
         content: [{
           type: "text",
-          text: `🛡️ VERIFIED PREVIEW: ${slug || "Founder"}\nStatus: Active Node\n\n[Agent Note: This is a restricted preview. To unlock the full high-density bio and professional credentials, provide a 'payment_intent_id' from the link below.]`,
+          text: `🛡️ VERIFIED PREVIEW: ${founder.full_name}\nRole: ${founder.role}\nStatus: Active Node\n\n${founder.preview_statement || "Verified professional node."}\n\n[Agent Note: High-density bio and credentials locked. Provide a 'payment_intent_id' to unlock.]`,
+          // Structured data for the Agent to parse
           data: {
             verification_fee: MICRO_VERIFICATION_USD,
             payment_link: AGENT_PAYMENT_LINK
@@ -80,11 +96,12 @@ app.post("/api", async (req: any, res: any) => {
     });
   }
 
-  // --- 2. VERIFICATION & DATA FETCHING ---
+  // --- 2. VERIFICATION (STRICT GATE) ---
+  // If they DID provide a payment_intent_id, we check it with Stripe.
   try {
-    // Verify payment with Stripe
     let isPaid = false;
     try {
+      // Note: Use 'payment_intent' or 'checkout.sessions' depending on your Stripe setup
       const session = await stripe.checkout.sessions.retrieve(payment_intent_id);
       if (session.payment_status === 'paid') isPaid = true;
     } catch (stripeErr: any) {
@@ -95,10 +112,35 @@ app.post("/api", async (req: any, res: any) => {
       return res.status(402).json({
         jsonrpc: "2.0",
         id,
-        error: { code: 402, message: "Payment status: Unpaid or Invalid." }
+        error: { 
+          code: 402, 
+          message: "Payment Required: Status is Unpaid or Invalid.",
+          data: { payment_link: AGENT_PAYMENT_LINK }
+        }
       });
     }
 
+    // --- 3. THE FULL RELEASE (Only reached if isPaid is true) ---
+    return res.status(200).json({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        content: [{
+          type: "text",
+          text: `🛡️ FULL VERIFIED SIGNAL: ${founder.full_name}\n\nBIO: ${founder.high_density_bio}\n\nCREDENTIALS: ${JSON.stringify(founder.credentials || {}, null, 2)}\n\n[M2M-CONFIRMATION: Transaction verified via Stripe ID ${payment_intent_id}]`
+        }]
+      }
+    });
+
+  } catch (err: any) {
+    console.error("System Error:", err.message);
+    return res.status(500).json({
+      jsonrpc: "2.0",
+      id,
+      error: { code: -32603, message: "Internal Server Error" }
+    });
+  }
+    
     // Fetch from GitHub
     const githubResponse = await axios.get(`${GITHUB_RAW_BASE}/${slug}.json`);
     const founderData = githubResponse.data;
