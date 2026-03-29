@@ -3,6 +3,7 @@
   "public": true,
   "rewrites": [
     { "source": "/api", "destination": "/api/index.ts" },
-    { "source": "/(.*)", "destination": "/$1" }
+    { "source": "/success", "destination": "/success.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
