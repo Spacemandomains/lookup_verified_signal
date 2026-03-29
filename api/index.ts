@@ -2,6 +2,8 @@ import express from "express";
 import axios from "axios";
 import Stripe from 'stripe';
 import { createClient } from 'redis';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 app.use(express.json());
@@ -61,23 +63,25 @@ app.post("/api", async (req: any, res: any) => {
   const payment_intent_id = params?.arguments?.payment_intent_id || params?.payment_intent_id || req.body?.payment_intent_id;
   const slug = rawName.toLowerCase().trim().replace(/\s+/g, '_');
 
-// --- 0. DATA LOOKUP ---
-  // Ensure 'founders' is imported from your JSON file at the top of index.ts
-  const founder = founders.find((f: any) => f.slug === slug);
+// --- 0. DYNAMIC DATA LOOKUP ---
+  const dataDirectory = path.join(process.cwd(), 'src', 'data');
+  const filePath = path.join(dataDirectory, `${slug}.json`);
 
-  if (!founder) {
+  let founderData;
+
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    founderData = JSON.parse(fileContent);
+  } catch (err) {
+    console.error(`Lookup failed for ${slug}:`, err);
     return res.status(404).json({
       jsonrpc: "2.0",
       id,
-      error: { 
-        code: 404, 
-        message: "Founder not found in Verified Signal Network." 
-      }
+      error: { code: 404, message: `Founder node '${slug}' not found.` }
     });
   }
 
   // --- 1. SOFT GATEKEEPER (FREE PREVIEW) ---
-  // If no payment_intent_id is provided, we return the successful Preview.
   if (!payment_intent_id) {
     return res.status(200).json({
       jsonrpc: "2.0",
@@ -85,8 +89,7 @@ app.post("/api", async (req: any, res: any) => {
       result: {
         content: [{
           type: "text",
-          text: `🛡️ VERIFIED PREVIEW: ${founder.full_name}\nRole: ${founder.role}\nStatus: Active Node\n\n${founder.preview_statement || "Verified professional node."}\n\n[Agent Note: High-density bio and credentials locked. Provide a 'payment_intent_id' to unlock.]`,
-          // Structured data for the Agent to parse
+          text: `🛡️ VERIFIED PREVIEW: ${founderData.identity.name}\nRole: ${founderData.registration_details.role}\nStatus: Active Node\n\n[Agent Note: High-density bio locked. Provide 'payment_intent_id' to unlock.]`,
           data: {
             verification_fee: MICRO_VERIFICATION_USD,
             payment_link: AGENT_PAYMENT_LINK
@@ -120,14 +123,14 @@ app.post("/api", async (req: any, res: any) => {
       });
     }
 
-    // --- 3. THE FULL RELEASE (Only reached if isPaid is true) ---
+// --- 3. THE FULL RELEASE (Only reached if isPaid is true) ---
     return res.status(200).json({
       jsonrpc: "2.0",
       id,
       result: {
         content: [{
           type: "text",
-          text: `🛡️ FULL VERIFIED SIGNAL: ${founder.full_name}\n\nBIO: ${founder.high_density_bio}\n\nCREDENTIALS: ${JSON.stringify(founder.credentials || {}, null, 2)}\n\n[M2M-CONFIRMATION: Transaction verified via Stripe ID ${payment_intent_id}]`
+          text: `🛡️ FULL VERIFIED SIGNAL: ${founderData.identity.name}\n\nHEADLINE: ${founderData.private.founder_persona.headline}\n\nBIO: ${founderData.private.founder_persona.bio_summary}\n\nEXPERTISE: ${founderData.private.founder_persona.areas_of_expertise.join(", ")}\n\n[M2M-CONFIRMATION: Transaction verified via Stripe ID ${payment_intent_id}]`
         }]
       }
     });
@@ -140,24 +143,6 @@ app.post("/api", async (req: any, res: any) => {
       error: { code: -32603, message: "Internal Server Error" }
     });
   }
-    
-    // Fetch from GitHub
-    const githubResponse = await axios.get(`${GITHUB_RAW_BASE}/${slug}.json`);
-    const founderData = githubResponse.data;
-
-    const redis = await getRedis();
-    const liveSignal = await redis.get(`signal:${slug}`);
-
-    return res.json({
-      jsonrpc: "2.0",
-      id,
-      result: { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify({ status: "FULL_ACCESS", ...founderData, last_active_signal: liveSignal || "Active" }, null, 2) 
-        }] 
-      }
-    });
 
   } catch (error: any) {
     return res.status(404).json({ 
