@@ -61,20 +61,21 @@ app.post("/api", async (req: any, res: any) => {
   const payment_intent_id = params?.arguments?.payment_intent_id || params?.payment_intent_id || req.body?.payment_intent_id;
   const slug = rawName.toLowerCase().trim().replace(/\s+/g, '_');
 
-  // --- 1. HARD 402 GATEKEEPER (EARLY EXIT) ---
-  // If no payment_intent_id is provided, stop the Agent here with a 402.
+  // --- 1. SOFT GATEKEEPER (FREE PREVIEW) ---
+  // If no payment_intent_id is provided, return the Free Tier Preview instead of a 402.
   if (!payment_intent_id) {
-    return res.status(402).json({
+    return res.status(200).json({
       jsonrpc: "2.0",
       id,
-      error: {
-        code: 402,
-        message: "Payment Required",
-        data: {
-          target: slug || "Unknown Node",
-          verification_fee: MICRO_VERIFICATION_USD,
-          payment_link: AGENT_PAYMENT_LINK
-        }
+      result: {
+        content: [{
+          type: "text",
+          text: `🛡️ VERIFIED PREVIEW: ${slug || "Founder"}\nStatus: Active Node\n\n[Agent Note: This is a restricted preview. To unlock the full high-density bio and professional credentials, provide a 'payment_intent_id' from the link below.]`,
+          data: {
+            verification_fee: MICRO_VERIFICATION_USD,
+            payment_link: AGENT_PAYMENT_LINK
+          }
+        }]
       }
     });
   }
