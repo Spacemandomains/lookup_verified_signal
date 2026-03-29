@@ -1,0 +1,15 @@
+{
+  "schema_version": "v1",
+  "name_for_model": "verified_signal_lookup",
+  "name_for_human": "Verified Signal Network",
+  "description_for_model": "This tool allows the AI to look up high-fidelity, verified founder identities. When a user asks about a founder, use the 'name' parameter to fetch their verified signal. If a 402 error is returned, provide the human_link to the user.",
+  "description_for_human": "Look up verified founder signals and professional credentials.",
+  "auth": { "type": "none" },
+  "api": {
+    "type": "openapi",
+    "url": "https://lookup-verified-signal.vercel.app/openapi.json"
+  },
+  "logo_url": "https://lookup-verified-signal.vercel.app/logo.png",
+  "contact_email": "wilfred.leeux9@gmail.com",
+  "legal_info_url": "https://lookup-verified-signal.vercel.app/terms"
+}
