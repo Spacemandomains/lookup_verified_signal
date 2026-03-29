@@ -1,12 +1,11 @@
 {
   "name": "lookup_verified_signal",
   "version": "1.0.0",
-  "description": "Verified Signal Network: Two-Sided M2M Identity Registry",
   "type": "module",
-  "main": "build/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js"
+    "vercel-build": "tsc",
+    "start": "node api/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
