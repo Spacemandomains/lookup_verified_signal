@@ -6,12 +6,15 @@ import Stripe from 'stripe';
 const app = express();
 app.use(express.json());
 
-// Initialize Stripe with your Restricted Key from Vercel Environment Variables
 const stripe = new Stripe(process.env.STRIPE_RESTRICTED_KEY || '', {
   apiVersion: '2023-10-16' as any,
 });
 
-// --- POST: Handles AI Agent requests (JSON-RPC) ---
+const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ";
+const agentStripeLink = "https://buy.stripe.com/5kQ5kD12e1AL0FSe3t9MY07";
+const registrationUrl = "https://lookup-verified-signal.vercel.app/";
+
+// --- POST: Handles AI Agent requests (MCP / JSON-RPC) ---
 app.post("/api", async (req: any, res: any) => {
   const { method, params, id } = req.body;
 
@@ -38,10 +41,6 @@ app.post("/api", async (req: any, res: any) => {
   if (method === "tools/call") {
     const { name, payment_intent_id } = params?.arguments || {};
     const fileName = (name || "").toLowerCase().replace(/\s+/g, '_');
-    
-    const AGENT_PRICE_ID = "price_1TG5InIjlqeMQmrhk6Ki3oWQ";
-    const agentStripeLink = "https://buy.stripe.com/5kQ5kD12e1AL0FSe3t9MY07";
-    const registrationUrl = "https://lookup-verified-signal.vercel.app/";
 
     try {
       const dataPath = path.join(process.cwd(), 'src', 'data', `${fileName}.json`);
@@ -66,7 +65,6 @@ app.post("/api", async (req: any, res: any) => {
               type: "text",
               text: JSON.stringify({ 
                 status: "VERIFIED_SIGNAL_RELEASED", 
-                message: "Payment confirmed. Full signal access granted.",
                 ...founderData 
               }, null, 2)
             }]
@@ -74,6 +72,7 @@ app.post("/api", async (req: any, res: any) => {
         });
       }
 
+      // CASE: 402 PAYWALL (With Free Snippet + Photo)
       return res.status(402).json({
         jsonrpc: "2.0", id,
         result: {
@@ -84,7 +83,9 @@ app.post("/api", async (req: any, res: any) => {
               code: 402,
               identity: { 
                 name: founderData.identity.name, 
-                role: founderData.founder_persona.headline 
+                role: founderData.founder_persona.headline,
+                photo_url: founderData.identity.photo_url || "https://lookup-verified-signal.vercel.app/default-avatar.png",
+                preview: "High-fidelity signal available. Professional history and direct contact links are locked."
               },
               agent_payment_action: {
                 protocol: "MPP/1.0",
@@ -111,11 +112,10 @@ app.post("/api", async (req: any, res: any) => {
       });
     }
   }
-
   return res.json({ jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found" } });
 });
 
-// --- GET: Handles Human Browser clicks (B14 Link) ---
+// --- GET: Handles Human Browser clicks (The B14 Link) ---
 app.get("/api", async (req, res) => {
   const { name } = req.query;
 
@@ -126,28 +126,28 @@ app.get("/api", async (req, res) => {
       const fileContent = await fs.readFile(dataPath, 'utf-8');
       const founderData = JSON.parse(fileContent);
 
-      // Return the paywall JSON directly to the browser
       return res.status(402).json({
         status: "PAYMENT_REQUIRED",
         code: 402,
         identity: { 
           name: founderData.identity.name, 
-          role: founderData.founder_persona.headline 
+          role: founderData.founder_persona.headline,
+          photo_url: founderData.identity.photo_url || "https://lookup-verified-signal.vercel.app/default-avatar.png",
+          preview: "Identity Verified. High-fidelity credentials locked."
         },
         agent_payment_action: {
           protocol: "MPP/1.0",
           amount: 85,
           currency: "usd",
-          price_id: "price_1TG5InIjlqeMQmrhk6Ki3oWQ",
-          human_link: "https://buy.stripe.com/5kQ5kD12e1AL0FSe3t9MY07"
+          price_id: AGENT_PRICE_ID,
+          human_link: agentStripeLink
         }
       });
     } catch (error) {
-      return res.status(404).send(`Founder node '${name}' not found in the Verified Signal Network.`);
+      return res.status(404).send(`Founder node '${name}' not found.`);
     }
   }
-
-  res.send("Verified Signal Network API is Online. Use ?name=[slug] to view a listing.");
+  res.send("Verified Signal Network API Online. Use ?name=[slug] to view a listing.");
 });
 
 export default app;
