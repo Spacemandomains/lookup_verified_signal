@@ -1,6 +1,36 @@
 {
-  "meta": { "node_active": true, "tier": "Lifetime", "node_id": "wsig_f_001" },
-  "identity": { "name": "Wilfred L. Lee Jr.", "photo": "https://raw.githubusercontent.com/Spacemandomains/Wilfred_L_Lee_Jr_Bio/main/Wilfred_L_Lee_Jr.JPG" },
-  "founder_persona": { "headline": "Lead Architect, Verified Signal Network", "full_bio": "Wilfred specializes in M2M identity registries and Agentic SEO." },
-  "verified_links": { "linkedin": "https://www.linkedin.com/in/wilfredleejr/" }
+  "identity": {
+    "name": "Wilfred L. Lee Jr.",
+    "slug": "wilfred_l_lee_jr",
+    "photo_url": "https://raw.githubusercontent.com/Spacemandomains/Wilfred_L_Lee_Jr_Bio/main/Wilfred_L_Lee_Jr.JPG",
+    "verified_on": "2026-03-28T23:45:00Z"
+  },
+  "founder_persona": {
+    "headline": "Lead Architect & Founder, The Winners Circle | AI Agent Developer",
+    "bio_summary": "Pioneering machine-to-machine (M2M) identity registries and Agentic SEO. Developer of 'The Copy Agency' AaaS and architect of the Verified Signal Network.",
+    "current_focus": "Organizing the 2026 Vibe Coding Conference in Miami and scaling decentralized identity oracles for autonomous agents.",
+    "areas_of_expertise": [
+      "AI Agent Architecture",
+      "UX Design & Research",
+      "M2M Economy",
+      "AaaS Infrastructure"
+    ]
+  },
+  "verified_links": {
+    "linkedin": "https://www.linkedin.com/in/wilfredleejr/",
+    "twitter_x": "https://x.com/wilfred_l_lee_jr",
+    "github": "https://github.com/Spacemandomains",
+    "website": "https://lookup-verified-signal.vercel.app"
+  },
+  "agentic_metadata": {
+    "accepts_m2m_payments": true,
+    "preferred_protocol": "MPP/1.0",
+    "signal_strength": "High",
+    "last_active_signal": "This field is dynamically synchronized with LinkedIn via Apify and Upstash Redis."
+  },
+  "registration_details": {
+    "status": "Verified",
+    "tier": "Founder-Lifetime",
+    "network_id": "VSN-001"
+  }
 }
