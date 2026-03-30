@@ -104,11 +104,7 @@ app.post("/api", async (req: any, res: any) => {
   // If they DID provide a payment_intent_id, we check it with Stripe.
   try {
     let isPaid = false;
-    
-    // ADD THIS TEST BYPASS LINE:
-    if (payment_intent_id === "TEST_MODE") isPaid = true;
-
-    try {
+  try {
       // Note: Use 'payment_intent' or 'checkout.sessions' depending on your Stripe setup
       const session = await stripe.checkout.sessions.retrieve(payment_intent_id);
       if (session.payment_status === 'paid') isPaid = true;
